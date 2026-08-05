@@ -1,0 +1,19 @@
+models:
+  primary: groq
+
+  fallbacks:
+    - cohere
+    - gemini
+
+failure_conditions:
+  - timeout
+  - rate_limit
+  - api_error
+  - network_error
+  - empty_response
+
+retry:
+  max_attempts: 2
+  backoff_seconds: 2
+
+  
