@@ -1,9 +1,9 @@
 models:
   primary: groq
 
-  fallbacks:
-    - cohere
-    - gemini
+fallbacks:
+  - cohere
+  - gemini
 
 failure_conditions:
   - timeout
@@ -16,4 +16,4 @@ retry:
   max_attempts: 2
   backoff_seconds: 2
 
-  
+
