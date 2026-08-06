@@ -2,6 +2,7 @@
 Failover routing logic for the LLM Router.
 """
 
+import logging
 import yaml
 import time
 
@@ -12,6 +13,14 @@ from src.providers import (
 )
 
 from src.exceptions import ProviderError
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 
 def load_config():
@@ -28,6 +37,7 @@ def run_with_fallback(prompt: str) -> str:
     """
 
     config = load_config()
+    start_time = time.time()
 
     primary = config["models"]["primary"]
     fallbacks = config["fallbacks"]
@@ -48,23 +58,29 @@ def run_with_fallback(prompt: str) -> str:
         for attempt in range(max_attempts + 1):
 
             try:
-                print(f"Trying {model} (Attempt {attempt + 1})...")
+                logger.info(f"Trying {model} (Attempt {attempt + 1})")
 
                 response = providers[model](prompt)
 
-                print(f"{model} succeeded!")
+                logger.info(f"{model} succeeded")
+                
+                elapsed_time = time.time() - start_time
+                logger.info(f"Total response time: {elapsed_time:.2f} seconds")
 
                 return response
 
             except ProviderError as error:
 
-                print(f"{model} failed: {error}")
+                logger.error(f"{model} failed: {error}")
 
                 if attempt < max_attempts:
-                    print(f"Retrying in {backoff} seconds...\n")
+
+                    logger.info(f"Retrying in {backoff} seconds")
+
                     time.sleep(backoff)
 
                 else:
-                    print(f"Moving to next provider...\n")
+
+                    logger.warning("Moving to next provider")
 
     raise Exception("All providers failed.")
