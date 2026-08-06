@@ -1,7 +1,9 @@
 """
 Failover routing logic for the LLM Router.
 """
+
 import yaml
+import time
 
 from src.providers import (
     call_groq,
@@ -22,7 +24,7 @@ def load_config():
 def run_with_fallback(prompt: str) -> str:
     """
     Try the primary model first.
-    If it fails, automatically switch to fallback models.
+    If it fails, retry before automatically switching to fallback models.
     """
 
     config = load_config()
@@ -38,17 +40,31 @@ def run_with_fallback(prompt: str) -> str:
 
     model_order = [primary] + fallbacks
 
+    max_attempts = config["retry"]["max_attempts"]
+    backoff = config["retry"]["backoff_seconds"]
+
     for model in model_order:
-        try:
-            print(f"Trying {model}...")
 
-            response = providers[model](prompt)
+        for attempt in range(max_attempts + 1):
 
-            print(f"{model} succeeded!")
+            try:
+                print(f"Trying {model} (Attempt {attempt + 1})...")
 
-            return response
+                response = providers[model](prompt)
 
-        except ProviderError as error:
-            print(f"{model} failed: {error}")
+                print(f"{model} succeeded!")
+
+                return response
+
+            except ProviderError as error:
+
+                print(f"{model} failed: {error}")
+
+                if attempt < max_attempts:
+                    print(f"Retrying in {backoff} seconds...\n")
+                    time.sleep(backoff)
+
+                else:
+                    print(f"Moving to next provider...\n")
 
     raise Exception("All providers failed.")
