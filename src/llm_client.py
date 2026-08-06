@@ -1,15 +1,17 @@
-import os
 import yaml
 from litellm import completion
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def load_config(path="configs/models.yaml"):
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
+
 CONFIG = load_config()
+
 
 def call_llm(prompt: str, provider: str = "groq"):
     """
