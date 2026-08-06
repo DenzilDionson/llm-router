@@ -40,3 +40,4 @@ def call_llm(prompt: str, provider: str = "groq"):
         "tokens_in": usage.prompt_tokens,
         "tokens_out": usage.completion_tokens,
     }
+
