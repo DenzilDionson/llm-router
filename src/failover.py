@@ -32,15 +32,12 @@ def load_config():
 
 def run_with_fallback(prompt: str) -> str:
     """
-    Try the primary model first.
-    If it fails, retry before automatically switching to fallback models.
+    Try providers in the configured fallback chain.
+    Retry each provider before moving to the next one.
     """
 
     config = load_config()
     start_time = time.time()
-
-    primary = config["models"]["primary"]
-    fallbacks = config["fallbacks"]
 
     providers = {
         "groq": call_groq,
@@ -48,7 +45,8 @@ def run_with_fallback(prompt: str) -> str:
         "gemini": call_gemini,
     }
 
-    model_order = [primary] + fallbacks
+    # Read provider order from the shared configuration
+    model_order = config["fallback_chain"]
 
     max_attempts = config["retry"]["max_attempts"]
     backoff = config["retry"]["backoff_seconds"]
@@ -63,9 +61,11 @@ def run_with_fallback(prompt: str) -> str:
                 response = providers[model](prompt)
 
                 logger.info(f"{model} succeeded")
-                
+
                 elapsed_time = time.time() - start_time
-                logger.info(f"Total response time: {elapsed_time:.2f} seconds")
+                logger.info(
+                    f"Total response time: {elapsed_time:.2f} seconds"
+                )
 
                 return response
 
@@ -75,12 +75,17 @@ def run_with_fallback(prompt: str) -> str:
 
                 if attempt < max_attempts:
 
-                    logger.info(f"Retrying in {backoff} seconds")
+                    logger.info(
+                        f"Retrying in {backoff} seconds"
+                    )
 
                     time.sleep(backoff)
 
                 else:
 
-                    logger.warning("Moving to next provider")
+                    logger.warning(
+                        "Moving to next provider"
+                    )
 
     raise Exception("All providers failed.")
+

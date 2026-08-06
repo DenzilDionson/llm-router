@@ -13,17 +13,32 @@ class TestFailover(unittest.TestCase):
 
     def get_mock_config(self):
         return {
-            "models": {
-                "primary": "groq"
+            "providers": {
+                "groq": {
+                    "model": "groq/llama-3.1-8b-instant",
+                    "cost_per_1k_input": 0.05,
+                    "cost_per_1k_output": 0.08,
+                },
+                "cohere": {
+                    "model": "cohere/command-a-plus-05-2026",
+                    "cost_per_1k_input": 0.5,
+                    "cost_per_1k_output": 1.5,
+                },
+                "gemini": {
+                    "model": "gemini/gemini-3.5-flash",
+                    "cost_per_1k_input": 0.075,
+                    "cost_per_1k_output": 0.3,
+                },
             },
-            "fallbacks": [
+            "fallback_chain": [
+                "groq",
                 "cohere",
-                "gemini"
+                "gemini",
             ],
             "retry": {
                 "max_attempts": 2,
-                "backoff_seconds": 0
-            }
+                "backoff_seconds": 0,
+            },
         }
 
     # -------------------------------------------------
