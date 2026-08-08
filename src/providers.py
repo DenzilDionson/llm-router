@@ -1,29 +1,28 @@
 """
 Provider implementations for supported LLM services.
 """
-from src.exceptions import (
-    TimeoutError,
-    RateLimitError,
-    EmptyResponseError,
-)
+from src.llm_client import call_llm
 
 
 def call_groq(prompt: str) -> str:
     """
-    Simulate a request to the Groq API.
+    Call Groq through the shared LLM client.
     """
-    raise TimeoutError("Groq request timed out")
+    result = call_llm(prompt, provider="groq")
+    return result["text"]
 
 
 def call_cohere(prompt: str) -> str:
     """
-    Simulate a request to the Cohere API.
+    Call Cohere through the shared LLM client.
     """
-    return f"Cohere response: {prompt}"
+    result = call_llm(prompt, provider="cohere")
+    return result["text"]
 
 
 def call_gemini(prompt: str) -> str:
     """
-    Simulate a request to the Gemini API.
+    Call Gemini through the shared LLM client.
     """
-    return f"Gemini response: {prompt}"
+    result = call_llm(prompt, provider="gemini")
+    return result["text"]
