@@ -88,4 +88,3 @@ def run_with_fallback(prompt: str) -> str:
                     )
 
     raise Exception("All providers failed.")
-

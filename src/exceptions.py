@@ -1,6 +1,8 @@
 """
 Custom exceptions used by the LLM Router.
 """
+
+
 class ProviderError(Exception):
     """Base exception for provider-related errors."""
     pass
