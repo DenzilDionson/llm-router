@@ -1,6 +1,7 @@
 import yaml
 from litellm import completion
 from dotenv import load_dotenv
+from src.exceptions import ProviderError
 
 load_dotenv()
 
@@ -24,10 +25,13 @@ def call_llm(prompt: str, provider: str = "groq"):
 
     model = provider_config["model"]
 
-    response = completion(
-        model=model,
-        messages=[{"role": "user", "content": prompt}]
-    )
+    try:
+        response = completion(
+            model=model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+    except Exception as error:
+        raise ProviderError(f"{provider} failed: {error}") from error
 
     cost = response._hidden_params.get("response_cost", None)
     usage = response.usage
