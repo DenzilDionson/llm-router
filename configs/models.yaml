@@ -14,6 +14,11 @@ providers:
     cost_per_1k_input: 0.0015
     cost_per_1k_output: 0.009
 
+routing:
+  simple: groq
+  moderate: cohere
+  complex: gemini
+
 fallback_chain:
   - groq
   - cohere

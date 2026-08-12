@@ -1,13 +1,13 @@
 """
-Prompt complexity classifier for the LLM Router.
+Cost-aware routing and prompt complexity classification.
 
-Classifies prompts into:
-- simple
-- moderate
-- complex
+Classifies prompts into simple, moderate, or complex,
+then selects an appropriate model based on the routing
+configuration in configs/models.yaml.
 """
 
 import re
+import yaml
 
 
 CODE_KEYWORDS = {
@@ -60,10 +60,17 @@ LONG_OUTPUT_KEYWORDS = {
 }
 
 
+def load_config(path="configs/models.yaml"):
+    """Load the shared model configuration."""
+
+    with open(path, "r") as file:
+        return yaml.safe_load(file)
+
+
 def contains_keyword(text: str, keywords: set[str]) -> bool:
     """
     Check whether any keyword appears as a complete word
-    or phrase rather than as part of another word.
+    rather than as part of another word.
     """
 
     for keyword in keywords:
@@ -101,10 +108,7 @@ def classify_prompt(prompt: str) -> str:
 
     score = 0
 
-    # -------------------------------------------------
     # Prompt length
-    # -------------------------------------------------
-
     if word_count <= 10:
         score -= 2
 
@@ -117,28 +121,18 @@ def classify_prompt(prompt: str) -> str:
     else:
         score += 3
 
-    # -------------------------------------------------
     # Programming requirements
-    # -------------------------------------------------
-
     if contains_keyword(prompt_lower, CODE_KEYWORDS):
         score += 3
 
-    # -------------------------------------------------
     # Mathematical requirements
-    # -------------------------------------------------
-
     if contains_keyword(prompt_lower, MATH_KEYWORDS):
         score += 2
 
-    # -------------------------------------------------
     # Reasoning requirements
-    # -------------------------------------------------
-
     if contains_keyword(prompt_lower, REASONING_KEYWORDS):
         score += 2
 
-    # Handle multi-word reasoning phrases separately.
     reasoning_phrases = {
         "explain why",
         "step by step",
@@ -150,17 +144,11 @@ def classify_prompt(prompt: str) -> str:
     ):
         score += 2
 
-    # -------------------------------------------------
     # Long / detailed output requirements
-    # -------------------------------------------------
-
     if contains_keyword(prompt_lower, LONG_OUTPUT_KEYWORDS):
         score += 2
 
-    # -------------------------------------------------
     # Multiple requirements
-    # -------------------------------------------------
-
     requirement_words = {
         "and",
         "also",
@@ -178,10 +166,7 @@ def classify_prompt(prompt: str) -> str:
     if requirement_count >= 3:
         score += 1
 
-    # -------------------------------------------------
     # Explicit short-answer requests
-    # -------------------------------------------------
-
     short_output_requests = {
         "one sentence",
         "in one sentence",
@@ -196,10 +181,7 @@ def classify_prompt(prompt: str) -> str:
     ):
         score -= 2
 
-    # -------------------------------------------------
     # Final classification
-    # -------------------------------------------------
-
     if score >= 5:
         return "complex"
 
@@ -207,6 +189,59 @@ def classify_prompt(prompt: str) -> str:
         return "moderate"
 
     return "simple"
+
+
+def select_model(prompt: str) -> dict:
+    """
+    Select the appropriate model based on prompt complexity.
+
+    Returns:
+        A dictionary containing:
+        - complexity
+        - provider
+        - model
+        - reasoning
+    """
+
+    config = load_config()
+
+    complexity = classify_prompt(prompt)
+
+    routing = config.get("routing", {})
+    providers = config.get("providers", {})
+
+    provider = routing.get(complexity)
+
+    if not provider:
+        raise ValueError(
+            f"No provider configured for complexity: {complexity}"
+        )
+
+    provider_config = providers.get(provider)
+
+    if not provider_config:
+        raise ValueError(
+            f"Provider '{provider}' is not configured."
+        )
+
+    model = provider_config.get("model")
+
+    if not model:
+        raise ValueError(
+            f"No model configured for provider: {provider}"
+        )
+
+    reasoning = (
+        f"The prompt was classified as '{complexity}', "
+        f"so the '{provider}' model was selected."
+    )
+
+    return {
+        "complexity": complexity,
+        "provider": provider,
+        "model": model,
+        "reasoning": reasoning,
+    }
 
 
 if __name__ == "__main__":
@@ -230,8 +265,11 @@ if __name__ == "__main__":
 
     for prompt in test_prompts:
 
-        complexity = classify_prompt(prompt)
+        result = select_model(prompt)
 
         print(f"Prompt: {prompt}")
-        print(f"Complexity: {complexity}")
+        print(f"Complexity: {result['complexity']}")
+        print(f"Provider: {result['provider']}")
+        print(f"Model: {result['model']}")
+        print(f"Reasoning: {result['reasoning']}")
         print()
