@@ -6,8 +6,8 @@ providers:
 
   cohere:
     model: "cohere/command-a-plus-05-2026"
-    cost_per_1k_input: 0.0
-    cost_per_1k_output: 0.0
+    cost_per_1k_input: 0.0025
+    cost_per_1k_output: 0.01
 
   gemini:
     model: "gemini/gemini-3.5-flash"
